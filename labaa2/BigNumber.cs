@@ -31,6 +31,10 @@ namespace labaa2
         }
         private BigNumber(int[] blocks)
         {
+            if(blocks.Length ==0)
+            {
+                throw new ArgumentException("Мфссив не должен быть пустым");
+            }
             int length = blocks.Length;
             
             while (length > 1 && blocks[length-1]==0)
@@ -43,6 +47,15 @@ namespace labaa2
 
 
         }
-        
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(_blocks[_blocks.Length - 1]);
+            for (int i = _blocks.Length -2;i>=0;i--)
+            {
+                sb.Append(_blocks[i].ToString().PadLeft(3, '0'));
+            }
+            return sb.ToString();
+        }
     }
 }

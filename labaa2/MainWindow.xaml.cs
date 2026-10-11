@@ -19,6 +19,7 @@ namespace labaa2
         public MainWindow()
         {
             InitializeComponent();
+            
         }
     }
 }

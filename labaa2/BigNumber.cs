@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace labaa2
@@ -57,5 +58,24 @@ namespace labaa2
             }
             return sb.ToString();
         }
+        private BigNumber Add(BigNumber other)
+        {
+            int[] a = _blocks;
+            int[] b = other._blocks;
+            int carry = 0;
+            int[] result = new int[Math.Max(a.Length, b.Length) + 1];
+            
+            
+            for (int i = 0; i < result.Length;i++ )
+            {
+                int valA = (i < a.Length) ? a[i] : 0;
+                int valB = (i < b.Length) ? b[i] : 0;
+                int sum = valA + valB + carry;
+                result[i] = (sum % Base);
+                carry = (sum / Base);
+            }
+            return new BigNumber(result);
+        }
+        public static BigNumber operator +(BigNumber a, BigNumber b) => a.Add(b);
     }
 }

@@ -19,7 +19,12 @@ namespace labaa2
         public MainWindow()
         {
             InitializeComponent();
-            
+            MessageBox.Show(
+                (new BigNumber(1) + new BigNumber(2)) + "\n" +
+                (new BigNumber(999) + new BigNumber(1)) + "\n" +
+                (new BigNumber(999999) + new BigNumber(1)) + "\n" +
+                (new BigNumber(0) + new BigNumber(0)) + "\n" +
+                (new BigNumber(12345678) + new BigNumber(87654322)));
         }
     }
 }

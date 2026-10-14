@@ -30,8 +30,8 @@ namespace labaa2
             }
 
             Gold = Gold - UpgradeCost;
-            Damage = Damage + Damage / 5 + BigNumber.One;      // +20% и ещё +1 берем целое
-            UpgradeCost = UpgradeCost.Scale(UpgradeCostGrowth); // каждое улучшение становится дороже 
+            Damage = Damage + Damage / 5 + BigNumber.One;      // +20% и ещё +1
+            UpgradeCost = UpgradeCost.Scale(UpgradeCostGrowth); // каждое улучшение дороже
             DamageLevel++;
             return true;
         }

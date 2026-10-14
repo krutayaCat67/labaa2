@@ -4,7 +4,10 @@ using System.Text;
 
 namespace labaa2
 {
-
+    /// <summary>
+    /// Противник на сцене (не шаблон из Лабы 1).
+    /// Состояние меняется только через TakeDamage.
+    /// </summary>
     public class Enemy
     {
         public string Name { get; private set; }
@@ -24,7 +27,7 @@ namespace labaa2
             Reward = reward;
         }
 
-        // наносим урон и если враг побежден мы возвращаем тру 
+        /// <summary>Наносит урон. Возвращает true, если противник побеждён.</summary>
         public bool TakeDamage(BigNumber damage)
         {
             if (IsDead)

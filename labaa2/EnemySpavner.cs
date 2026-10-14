@@ -1,0 +1,114 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using labaa2.Models;
+
+namespace labaa2
+{
+    
+    public class EnemySpawner
+    {
+        private readonly List<CEnemyTemplate> _templates;
+        private readonly double[] _chances; // нормализованные: сумма = 1
+        private readonly Random _random = new Random();
+        private int _level;                 // сколько противников уже было
+
+        public EnemySpawner(IEnumerable<CEnemyTemplate> templates)
+        {
+            _templates = new List<CEnemyTemplate>(templates);
+
+            if (_templates.Count == 0)
+            {
+                throw new ArgumentException("Нет ни одного шаблона противника");
+            }
+
+            // Нормализация: делим каждый шанс на сумму всех шансов
+            double total = 0;
+            foreach (CEnemyTemplate t in _templates)
+            {
+                total += Math.Max(0, t.SpawnChance);
+            }
+
+            _chances = new double[_templates.Count];
+            for (int i = 0; i < _templates.Count; i++)
+            {
+                _chances[i] = total > 0
+                    ? Math.Max(0, _templates[i].SpawnChance) / total
+                    : 1.0 / _templates.Count; // все шансы нулевые -> равные
+            }
+        }
+
+        public Enemy SpawnNext()
+        {
+            CEnemyTemplate template = PickTemplate();
+            Enemy enemy = CreateEnemy(template, _level);
+            _level++;
+            return enemy;
+        }
+
+        
+        private CEnemyTemplate PickTemplate()
+        {
+            double roll = _random.NextDouble();
+            double cumulative = 0;
+
+            for (int i = 0; i < _templates.Count; i++)
+            {
+                cumulative += _chances[i];
+                if (roll < cumulative)
+                {
+                    return _templates[i];
+                }
+            }
+
+            return _templates[_templates.Count - 1]; // страховка от погрешности double
+        }
+
+        // Каждый следующий противник сильнее: значения домножаются на модификатор level раз
+        private static Enemy CreateEnemy(CEnemyTemplate template, int level)
+        {
+            BigNumber life = new BigNumber(Math.Max(1, template.BaseLife));
+            BigNumber gold = new BigNumber(Math.Max(0, template.BaseGold));
+
+            for (int i = 0; i < level; i++)
+            {
+                life = life.Scale(template.LifeModifier);
+                gold = gold.Scale(template.GoldModifier);
+            }
+
+            return new Enemy(template.Name, template.IconName, life, gold);
+        }
+    }
+
+    
+    
+    public class ClickGame
+    {
+        private readonly EnemySpawner _spawner;
+
+        public Player Player { get; } = new Player();
+        public Enemy CurrentEnemy { get; private set; }
+
+        public ClickGame(IEnumerable<CEnemyTemplate> templates)
+        {
+            _spawner = new EnemySpawner(templates);
+            CurrentEnemy = _spawner.SpawnNext();
+        }
+
+        
+        public bool Click()
+        {
+            bool defeated = CurrentEnemy.TakeDamage(Player.Damage);
+
+            if (defeated)
+            {
+                Player.AddGold(CurrentEnemy.Reward);
+                CurrentEnemy = _spawner.SpawnNext();
+            }
+
+            return defeated;
+        }
+
+        public bool TryUpgrade() => Player.TryUpgrade();
+    }
+}

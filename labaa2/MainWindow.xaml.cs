@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using labaa2.Models;
 using Microsoft.Win32;
 
@@ -14,6 +15,8 @@ namespace labaa2
         private ClickGame? _game;
         private string _iconsFolder = "";
         private Enemy? _shownEnemy; // для какого противника сейчас загружена иконка
+        private COrbController? _orbs;
+        private DispatcherTimer? _timer;
 
         public MainWindow()
         {
@@ -31,6 +34,7 @@ namespace labaa2
 
             RefreshUi();
             StartIdleAnimation();
+            StartGameLoop();
         }
 
         // Загружает шаблоны из JSON (Лаба 1) и создаёт игру.
@@ -81,7 +85,7 @@ namespace labaa2
 
         private void EnemyImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (_game == null) return;
+            if (_game == null || !_game.CanClick) return; // на перезарядке клик игнорируется
 
             BigNumber reward = _game.CurrentEnemy.Reward; // запоминаем до удара: после победы враг сменится
 
@@ -97,6 +101,66 @@ namespace labaa2
                 PlayHitAnimation();
             }
 
+            RefreshUi();
+        }
+
+        // ---------- Лаба 3: таймер, перезарядка, бонусные сферы ----------
+
+        private void StartGameLoop()
+        {
+            if (_game == null) return;
+
+            _orbs = new COrbController(_game, new Size(OrbCanvas.ActualWidth, OrbCanvas.ActualHeight));
+
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _timer.Tick += Timer_Tick;
+            _timer.Start();
+        }
+
+        private void Timer_Tick(object? sender, EventArgs e)
+        {
+            if (_game == null || _orbs == null) return;
+
+            _game.Update(0.1);
+            _orbs.Update(0.1);
+            SyncOrbSprites();
+            RefreshUi();
+        }
+
+        private void SyncOrbSprites()
+        {
+            if (_orbs == null) return;
+
+            OrbCanvas.Children.Clear();
+            foreach (CCollectable orb in _orbs.Orbs)
+            {
+                OrbCanvas.Children.Add(orb.GetSprite());
+            }
+        }
+
+        private void OrbCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            _orbs?.SetSceneSize(e.NewSize);
+        }
+
+        // Tunneling-событие: сначала проверяем сферы; если попали — удар по противнику не происходит
+        private void Portrait_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_orbs == null) return;
+
+            if (_orbs.HandleClick(e.GetPosition(OrbCanvas)))
+            {
+                e.Handled = true;
+                SyncOrbSprites();
+                RefreshUi();
+            }
+        }
+
+        private void CooldownUpgradeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_game == null) return;
+
+            _game.TryUpgradeCooldown();
             RefreshUi();
         }
 
@@ -116,7 +180,7 @@ namespace labaa2
             Enemy enemy = _game.CurrentEnemy;
 
             GoldText.Text = player.Gold.ToShortString();
-            DamageText.Text = player.Damage.ToShortString() + "  (lv " + player.DamageLevel + ")";
+            DamageText.Text = player.EffectiveDamage.ToShortString() + "  (lv " + player.DamageLevel + ")";
 
             EnemyNameText.Text = enemy.Name;
             RewardText.Text = enemy.Reward.ToShortString();
@@ -132,6 +196,12 @@ namespace labaa2
             UpgradeButton.Content = "UPGRADE DAMAGE  [" + player.UpgradeCost.ToShortString() + "]";
             UpgradeButton.IsEnabled = player.CanUpgrade;
 
+            CooldownText.Text = player.Cooldown.Duration.ToString("0.00") + " s  (lv " + player.CooldownLevel + ")"
+                + (player.Cooldown.IsReady ? "  READY" : "  ...");
+            CooldownUpgradeButton.Content = "UPGRADE COOLDOWN  [" + player.CooldownUpgradeCost.ToShortString() + "]";
+            CooldownUpgradeButton.IsEnabled = player.CanUpgradeCooldown;
+            EffectsText.Text = player.ActiveEffectsCount > 0 ? "BONUS ACTIVE x" + player.ActiveEffectsCount : "";
+
             if (!ReferenceEquals(_shownEnemy, enemy))
             {
                 ShowEnemyIcon(enemy);
@@ -139,7 +209,7 @@ namespace labaa2
             }
         }
 
-        // Индикатор состояния цели, как в старых Resident Evil
+        
         private void UpdateCondition(int percent)
         {
             string text;

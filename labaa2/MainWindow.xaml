@@ -110,8 +110,18 @@
                 <TextBlock x:Name="DamageText" FontSize="16" FontWeight="Bold"
                        Foreground="#E0E0E0" Margin="0,0,0,10"/>
 
+                <TextBlock Text="Click cooldown"/>
+                <TextBlock x:Name="CooldownText" FontSize="14" FontWeight="Bold"
+                       Foreground="#E0E0E0" Margin="0,0,0,10"/>
+
+                <TextBlock x:Name="EffectsText" FontSize="13" FontWeight="Bold"
+                       Foreground="#3FBF4F" MinHeight="20"/>
+
                 <Button x:Name="UpgradeButton" Height="44" Margin="0,20,0,0"
                     Click="UpgradeButton_Click"/>
+
+                <Button x:Name="CooldownUpgradeButton" Height="44" Margin="0,10,0,0"
+                    Click="CooldownUpgradeButton_Click"/>
             </StackPanel>
         </Border>
 
@@ -140,7 +150,8 @@
                 <!-- Портрет: кликабельна только сама иконка -->
                 <Border Grid.Row="2" Background="#0F0F0F"
                     BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
-                    ClipToBounds="True">
+                    ClipToBounds="True"
+                    PreviewMouseLeftButtonDown="Portrait_PreviewMouseLeftButtonDown">
                     <Grid>
                         <Image x:Name="EnemyImage" Stretch="Uniform" Margin="24"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -169,6 +180,10 @@
                         <!-- Красная вспышка при попадании (анимируется из кода) -->
                         <Rectangle x:Name="HitOverlay" Fill="{StaticResource BloodRed}"
                                Opacity="0" IsHitTestVisible="False"/>
+
+                        <!-- Слой бонусных сфер (клики ловит Border портрета) -->
+                        <Canvas x:Name="OrbCanvas" IsHitTestVisible="False"
+                                SizeChanged="OrbCanvas_SizeChanged"/>
                     </Grid>
                 </Border>
 

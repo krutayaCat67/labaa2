@@ -5,7 +5,7 @@ using labaa2.Models;
 
 namespace labaa2
 {
-    
+
     public class EnemySpawner
     {
         private readonly List<CEnemyTemplate> _templates;
@@ -46,7 +46,7 @@ namespace labaa2
             return enemy;
         }
 
-        
+
         private CEnemyTemplate PickTemplate()
         {
             double roll = _random.NextDouble();
@@ -80,8 +80,8 @@ namespace labaa2
         }
     }
 
-    
-    
+
+
     public class ClickGame
     {
         private readonly EnemySpawner _spawner;
@@ -95,10 +95,20 @@ namespace labaa2
             CurrentEnemy = _spawner.SpawnNext();
         }
 
-        
+
+        // можно ли сейчас бить противника (перезарядка прошла)
+        public bool CanClick => Player.Cooldown.IsReady;
+
         public bool Click()
         {
-            bool defeated = CurrentEnemy.TakeDamage(Player.Damage);
+            if (!CanClick)
+            {
+                return false; // перезарядка активна — клик игнорируется
+            }
+
+            Player.Cooldown.Start(); // и сразу сбрасываем перезарядку
+
+            bool defeated = CurrentEnemy.TakeDamage(Player.EffectiveDamage);
 
             if (defeated)
             {
@@ -110,5 +120,10 @@ namespace labaa2
         }
 
         public bool TryUpgrade() => Player.TryUpgrade();
+
+        public bool TryUpgradeCooldown() => Player.TryUpgradeCooldown();
+
+        // вызывается из таймера окна
+        public void Update(double dt) => Player.Update(dt);
     }
 }

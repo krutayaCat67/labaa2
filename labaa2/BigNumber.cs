@@ -79,7 +79,7 @@ namespace labaa2
             return sb.ToString();
         }
 
-        // Короткая запись для интерфейса: 1234567890123 -> 1.23e12
+        // Короткая запись для интерфейса
         public string ToShortString()
         {
             string s = ToString();
@@ -90,7 +90,7 @@ namespace labaa2
             return s[0] + "." + s.Substring(1, 2) + "e" + (s.Length - 1);
         }
 
-        // ---------- Сравнение ----------
+        // 
 
         public int CompareTo(BigNumber other)
         {
@@ -137,7 +137,7 @@ namespace labaa2
             return hash.ToHashCode();
         }
 
-        // ---------- Арифметика (вся логика здесь, операторы только вызывают эти методы) ----------
+        // Арифметика (вся логика здесь, операторы только вызывают эти методы) 
 
         // Сложение столбиком с переносом
         private BigNumber Add(BigNumber other)

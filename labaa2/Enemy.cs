@@ -5,7 +5,7 @@ using System.Text;
 namespace labaa2
 {
     /// <summary>
-    /// Противник на сцене (не шаблон из Лабы 1).
+    /// Противник на сцене 
     /// Состояние меняется только через TakeDamage.
     /// </summary>
     public class Enemy

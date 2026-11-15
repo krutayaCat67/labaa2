@@ -1,25 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
-using System.IO;
+﻿using System.Collections.Generic;
 
 namespace labaa2.Models
 {
     public class CEnemyTemplateList
     {
-        private List<CEnemyTemplate> enemies;
+        private List<CEnemyTemplate> enemies = new List<CEnemyTemplate>();
 
-        public CEnemyTemplateList()
-        {
-            enemies = new List<CEnemyTemplate>();
-        }
+        // Работаем через интерфейс: формат можно сменить заменой одной строки
+        private readonly ISaveList<List<CEnemyTemplate>> _serializer = new JsonEnemySaver();
 
-        public void AddEnemy(string name, string iconName, int baseLife,
-            double lifeModifier, int baseGold, double goldModifier, double spawnChance)
+        public void AddEnemy(CEnemyTemplate enemy)
         {
-            enemies.Add(new CEnemyTemplate(name, iconName, baseLife,
-                lifeModifier, baseGold, goldModifier, spawnChance));
+            enemies.Add(enemy);
         }
 
         public CEnemyTemplate GetEnemyByName(string name)
@@ -51,37 +43,10 @@ namespace labaa2.Models
             return names;
         }
 
-        public List<CEnemyTemplate> GetAllEnemies()
-        {
-            return enemies;
-        }
+        public List<CEnemyTemplate> GetAllEnemies() => enemies;
 
-        public void SaveToJson(string path)
-        {
-            string json = JsonSerializer.Serialize(enemies);
-            File.WriteAllText(path, json);
-        }
+        public void SaveToJson(string path) => _serializer.Save(enemies, path);
 
-        public void LoadFromJson(string path)
-        {
-            if (!File.Exists(path)) return;
-            string json = File.ReadAllText(path);
-            enemies.Clear();
-
-            using JsonDocument doc = JsonDocument.Parse(json);
-            foreach (JsonElement el in doc.RootElement.EnumerateArray())
-            {
-                string name = el.GetProperty("Name").GetString();
-                string icon = el.GetProperty("IconName").GetString();
-                int baseLife = el.GetProperty("BaseLife").GetInt32();
-                double lifeMod = el.GetProperty("LifeModifier").GetDouble();
-                int baseGold = el.GetProperty("BaseGold").GetInt32();
-                double goldMod = el.GetProperty("GoldModifier").GetDouble();
-                double spawn = el.GetProperty("SpawnChance").GetDouble();
-
-                enemies.Add(new CEnemyTemplate(name, icon, baseLife,
-                    lifeMod, baseGold, goldMod, spawn));
-            }
-        }
+        public void LoadFromJson(string path) => enemies = _serializer.Load(path);
     }
 }

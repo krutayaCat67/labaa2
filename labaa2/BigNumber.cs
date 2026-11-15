@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Runtime.Intrinsics.Arm;
@@ -77,6 +78,29 @@ namespace labaa2
             }
 
             return sb.ToString();
+        }
+
+        // Разбор числа из строки (нужен для загрузки сохранения)
+        public static BigNumber Parse(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text) || !text.All(char.IsDigit))
+            {
+                throw new FormatException("Некорректное число: " + text);
+            }
+
+            text = text.TrimStart('0');
+            if (text.Length == 0)
+            {
+                return Zero;
+            }
+
+            List<int> blocks = new List<int>();
+            for (int end = text.Length; end > 0; end -= BaseDigits)
+            {
+                int start = Math.Max(0, end - BaseDigits);
+                blocks.Add(int.Parse(text.Substring(start, end - start)));
+            }
+            return new BigNumber(blocks.ToArray());
         }
 
         // Короткая запись для интерфейса

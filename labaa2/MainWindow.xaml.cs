@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -14,9 +15,10 @@ namespace labaa2
     {
         private ClickGame? _game;
         private string _iconsFolder = "";
-        private Enemy? _shownEnemy; // для какого противника сейчас загружена иконка
+        private IEnemy? _shownEnemy; // для какого противника сейчас загружена иконка
         private COrbController? _orbs;
         private DispatcherTimer? _timer;
+        private readonly string _savePath = Path.Combine(AppContext.BaseDirectory, "player.json");
 
         public MainWindow()
         {
@@ -26,15 +28,24 @@ namespace labaa2
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!TryStartGame())
+            try
             {
-                Close();
-                return;
-            }
+                if (!TryStartGame())
+                {
+                    Close();
+                    return;
+                }
 
-            RefreshUi();
-            StartIdleAnimation();
-            StartGameLoop();
+                _game!.LoadProgress(_savePath);
+                RefreshUi();
+                StartIdleAnimation();
+                StartGameLoop();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+                Close();
+            }
         }
 
         // Загружает шаблоны из JSON (Лаба 1) и создаёт игру.
@@ -83,6 +94,12 @@ namespace labaa2
             return true;
         }
 
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            _game?.SaveProgress(_savePath); // автосохранение при выходе
+            base.OnClosing(e);
+        }
+
         private void EnemyImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_game == null || !_game.CanClick) return; // на перезарядке клик игнорируется
@@ -98,6 +115,7 @@ namespace labaa2
             }
             else
             {
+                StatusText.Text = _game.CurrentEnemy.LastEvent; // броня / лечение
                 PlayHitAnimation();
             }
 
@@ -177,12 +195,13 @@ namespace labaa2
             if (_game == null) return;
 
             Player player = _game.Player;
-            Enemy enemy = _game.CurrentEnemy;
+            IEnemy enemy = _game.CurrentEnemy;
 
             GoldText.Text = player.Gold.ToShortString();
             DamageText.Text = player.EffectiveDamage.ToShortString() + "  (lv " + player.DamageLevel + ")";
 
             EnemyNameText.Text = enemy.Name;
+            TypeText.Text = enemy.TypeTitle;
             RewardText.Text = enemy.Reward.ToShortString();
 
             HealthText.Text = enemy.CurrentHealth.ToShortString() + " / " + enemy.MaxHealth.ToShortString();
@@ -209,7 +228,7 @@ namespace labaa2
             }
         }
 
-        
+
         private void UpdateCondition(int percent)
         {
             string text;
@@ -243,7 +262,7 @@ namespace labaa2
             HitOverlay.BeginAnimation(UIElement.OpacityProperty, animation);
         }
 
-        private void ShowEnemyIcon(Enemy enemy)
+        private void ShowEnemyIcon(IEnemy enemy)
         {
             string path = Path.Combine(_iconsFolder, enemy.IconName);
             EnemyImage.Source = File.Exists(path) ? new BitmapImage(new Uri(path)) : null;

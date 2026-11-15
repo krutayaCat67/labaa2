@@ -57,6 +57,9 @@ namespace labaa2.Models
         // Для UI: человекочитаемое название типа
         public abstract string TypeTitle { get; }
 
+        // Доп. параметры конструктора игрового противника (у каждого типа свои)
+        public virtual object[] GetExtraArgs() => Array.Empty<object>();
+
         // Нужен System.Text.Json
         protected CEnemyTemplate() { }
 

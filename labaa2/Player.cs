@@ -1,4 +1,5 @@
-﻿using labaa2.Models;
+﻿using System;
+using labaa2.Models;
 
 namespace labaa2
 {
@@ -30,6 +31,19 @@ namespace labaa2
 
         public bool CanUpgrade => Gold >= UpgradeCost;
         public bool CanUpgradeCooldown => Gold >= CooldownUpgradeCost && !Cooldown.IsAtMinimum;
+
+        /// <summary>Восстанавливает постоянный прогресс из сохранения (временные эффекты не сохраняются).</summary>
+        public void Restore(BigNumber gold, BigNumber damage, BigNumber upgradeCost, int damageLevel,
+            double cooldownBase, BigNumber cooldownUpgradeCost, int cooldownLevel)
+        {
+            Gold = gold;
+            Damage = damage.IsZero ? BigNumber.One : damage;
+            UpgradeCost = upgradeCost;
+            DamageLevel = Math.Max(1, damageLevel);
+            Cooldown.SetBase(cooldownBase);
+            CooldownUpgradeCost = cooldownUpgradeCost;
+            CooldownLevel = Math.Max(1, cooldownLevel);
+        }
 
         public void AddGold(BigNumber amount)
         {

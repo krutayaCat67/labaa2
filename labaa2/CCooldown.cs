@@ -5,7 +5,7 @@ using System.Windows;
 
 namespace labaa2
 {
-    
+
     public class CCooldown
     {
         private const double MinDuration = 0.1;
@@ -21,6 +21,7 @@ namespace labaa2
             _baseDuration = duration;
         }
 
+        public double BaseDuration => _baseDuration;
         public double Duration => _baseDuration * Multiplier;
         public bool IsReady => _remaining <= 0;
         public bool IsAtMinimum => _baseDuration <= MinDuration + 1e-9;
@@ -33,6 +34,12 @@ namespace labaa2
             {
                 _remaining -= dt;
             }
+        }
+
+        // восстановление из сохранения
+        public void SetBase(double duration)
+        {
+            _baseDuration = Math.Max(MinDuration, duration);
         }
 
         // постоянное улучшение (за золото)

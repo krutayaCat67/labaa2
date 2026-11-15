@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using labaa2.Models;
@@ -38,10 +39,10 @@ namespace labaa2
             }
         }
 
-        public Enemy SpawnNext()
+        public IEnemy SpawnNext()
         {
             CEnemyTemplate template = PickTemplate();
-            Enemy enemy = CreateEnemy(template, _level);
+            IEnemy enemy = CreateEnemy(template, _level);
             _level++;
             return enemy;
         }
@@ -65,7 +66,7 @@ namespace labaa2
         }
 
         // Каждый следующий противник сильнее: значения домножаются на модификатор level раз
-        private static Enemy CreateEnemy(CEnemyTemplate template, int level)
+        private static IEnemy CreateEnemy(CEnemyTemplate template, int level)
         {
             BigNumber life = new BigNumber(Math.Max(1, template.BaseLife));
             BigNumber gold = new BigNumber(Math.Max(0, template.BaseGold));
@@ -76,7 +77,13 @@ namespace labaa2
                 gold = gold.Scale(template.GoldModifier);
             }
 
-            return new Enemy(template.Name, template.IconName, life, gold);
+            // Тип противника определяется именем шаблона: CArmoredEnemyTemplate -> CArmoredEnemy
+            string typeName = template.GetType().Name.Replace("Template", "");
+
+            List<object> args = new List<object> { template.Name, template.IconName, life, gold };
+            args.AddRange(template.GetExtraArgs());
+
+            return EnemyFactory.CreateEnemy(typeName, args.ToArray());
         }
     }
 
@@ -86,8 +93,10 @@ namespace labaa2
     {
         private readonly EnemySpawner _spawner;
 
-        public Player Player { get; } = new Player();
-        public Enemy CurrentEnemy { get; private set; }
+        private readonly ISaveList<Player> _saver = new PlayerSaver();
+
+        public Player Player { get; private set; } = new Player();
+        public IEnemy CurrentEnemy { get; private set; }
 
         public ClickGame(IEnumerable<CEnemyTemplate> templates)
         {
@@ -117,6 +126,21 @@ namespace labaa2
             }
 
             return defeated;
+        }
+
+        // Сохранение прогресса через ISaveList<Player>
+        public void SaveProgress(string path) => _saver.Save(Player, path);
+
+        public void LoadProgress(string path)
+        {
+            try
+            {
+                if (File.Exists(path)) Player = _saver.Load(path);
+            }
+            catch (Exception)
+            {
+                // повреждённый файл сохранения: начинаем с нуля
+            }
         }
 
         public bool TryUpgrade() => Player.TryUpgrade();
